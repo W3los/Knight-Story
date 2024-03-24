@@ -8,38 +8,16 @@ pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
 
-class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((width, height))
-        self.image.fill((0, 255, 0))
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-    def Level1():
-        platforms = pygame.sprite.Group()
-        platforms.add(Platform(0, screenheight - 50, screenwidth/3, 50))
-        platforms.add(Platform(screenwidth/3, screenheight-125, 300, 125))
-        platforms.add(Platform(600, 575, 150, 20))
-        platforms.add(Platform(800, 575, 100, 20))
-        platforms.add(Platform(900, 575, 100, 125))
-        return platforms
     
 
 
-class Block(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):  # Character for MOBA game
     def __init__(self):
 
         self.idle = [pygame.image.load(os.path.join("Graphics",'idle1.png')), pygame.image.load(os.path.join("Graphics",'idle2.png')), pygame.image.load(os.path.join("Graphics",'idle3.png')), pygame.image.load(os.path.join("Graphics",'idle4.png')), pygame.image.load(os.path.join("Graphics",'idle5.png')), pygame.image.load(os.path.join("Graphics",'idle6.png')), pygame.image.load(os.path.join("Graphics",'idle7.png')), pygame.image.load(os.path.join("Graphics",'idle8.png')), pygame.image.load(os.path.join("Graphics",'idle9.png')),pygame.image.load(os.path.join("Graphics",'idle10.png'))]
         self.runright = [pygame.image.load(os.path.join("Graphics",'run1.png')), pygame.image.load(os.path.join("Graphics",'run2.png')), pygame.image.load(os.path.join("Graphics",'run3.png')), pygame.image.load(os.path.join("Graphics",'run4.png')), pygame.image.load(os.path.join("Graphics",'run5.png')), pygame.image.load(os.path.join("Graphics",'run6.png')), pygame.image.load(os.path.join("Graphics",'run7.png')), pygame.image.load(os.path.join("Graphics",'run8.png')), pygame.image.load(os.path.join("Graphics",'run9.png')),pygame.image.load(os.path.join("Graphics",'run10.png'))]
         self.runleft = [pygame.image.load(os.path.join("Graphics",'left1.png')), pygame.image.load(os.path.join("Graphics",'left2.png')), pygame.image.load(os.path.join("Graphics",'left3.png')), pygame.image.load(os.path.join("Graphics",'left4.png')), pygame.image.load(os.path.join("Graphics",'left5.png')), pygame.image.load(os.path.join("Graphics",'left6.png')), pygame.image.load(os.path.join("Graphics",'left7.png')), pygame.image.load(os.path.join("Graphics",'left8.png')), pygame.image.load(os.path.join("Graphics",'left9.png')),pygame.image.load(os.path.join("Graphics",'left10.png'))]
         self.idleleftanim = [pygame.image.load(os.path.join("Graphics",'idleleft1.png')), pygame.image.load(os.path.join("Graphics",'idleleft2.png')), pygame.image.load(os.path.join("Graphics",'idleleft3.png')), pygame.image.load(os.path.join("Graphics",'idleleft4.png')), pygame.image.load(os.path.join("Graphics",'idleleft5.png')), pygame.image.load(os.path.join("Graphics",'idleleft6.png')), pygame.image.load(os.path.join("Graphics",'idleleft7.png')), pygame.image.load(os.path.join("Graphics",'idleleft8.png')), pygame.image.load(os.path.join("Graphics",'idleleft9.png')),pygame.image.load(os.path.join("Graphics",'idleleft10.png'))]
-        self.jumpright = [pygame.image.load(os.path.join("Graphics",'jumpright1.png')), pygame.image.load(os.path.join("Graphics",'jumpright2.png')), pygame.image.load(os.path.join("Graphics",'jumpright3.png'))]
-        self.fallright = [pygame.image.load(os.path.join("Graphics",'fallright1.png')), pygame.image.load(os.path.join("Graphics",'fallright2.png')), pygame.image.load(os.path.join("Graphics",'fallright3.png'))]
-        self.jumpleft = [pygame.image.load(os.path.join("Graphics",'jumpleft1.png')), pygame.image.load(os.path.join("Graphics",'jumpleft2.png')), pygame.image.load(os.path.join("Graphics",'jumpleft3.png'))]
-        self.fallleft = [pygame.image.load(os.path.join("Graphics",'fallleft1.png')), pygame.image.load(os.path.join("Graphics",'fallleft2.png')), pygame.image.load(os.path.join("Graphics",'fallleft3.png'))]
-
 
         self.blockwidth = 29
         self.blockheight = 38
@@ -51,18 +29,13 @@ class Block(pygame.sprite.Sprite):
 
         self.vel_y = 8
 
-        self.jumping = False
-        self.jumped = False
-        
-
         self.left = False
         self.right = False 
         self.walkcount = 0
         self.idlecount = 0
         self.idleright = True
         self.idleleft = False
-        self.jumpcountanim = 0
-        self.fallcountanim = 0   
+
         self.life = 1
 
         self.char1 = self.idle[0].get_rect()
@@ -74,43 +47,6 @@ class Block(pygame.sprite.Sprite):
 
 
         
-    def update(self):
-        dx = 0
-        dy = 0
-        key = pygame.key.get_pressed()
-        if key[pygame.K_SPACE]:
-            if not self.jumped:  # Warunek sprawdzający, czy postać nie jest w trakcie skoku
-                self.vel_y = -12
-                self.jumping = True
-                self.jumped = True
-
-        if key[pygame.K_a]:
-            dx -= 6
-            self.left = True
-            self.right = False
-            self.idleleft = True
-            self.idleright = False
-        elif key[pygame.K_d]:
-            dx += 6
-            self.left = False
-            self.right = True
-            self.idleleft = False
-            self.idleright = True
-        else:
-            self.left = False
-            self.right = False
-            self.walkcount = 0
-        
-        #add gravity
-        self.vel_y += 1
-        if self.vel_y > 10:
-            self.vel_y = 10
-        dy += self.vel_y
-
-        
-        if(self.gamedisplay == 1):
-            platforms = Platform.Level1()
-
 
         
         # Collision
@@ -207,7 +143,7 @@ def main():
     levelselectorbool = False
     levelselmain = False
 
-    pygame.display.set_caption('Knight Story') # Title
+    pygame.display.set_caption('MultiTrainer') # Title
 
     # Fill background
     mainmenu = pygame.image.load(os.path.join("Graphics",'background.png'))
@@ -220,11 +156,11 @@ def main():
     levelselgraphic = pygame.transform.scale(levelselgraphic,bgsize)
 
     # Displaying text
-    fonttitle = pygame.font.Font("medieval.ttf", 80)
-    font = pygame.font.Font("medieval.ttf", 45)
+    fonttitle = pygame.font.Font("VeniteAdoremus.ttf", 80)
+    font = pygame.font.Font("VeniteAdoremus.ttf", 45)
 
 
-    title = fonttitle.render("Knight Story", 3, (64, 64, 64))
+    title = fonttitle.render("MultiTrainer", 3, (64, 64, 64))
     titlepos = title.get_rect()
     titlepos.center = (screenwidth//2 , screenheight//7)
 
