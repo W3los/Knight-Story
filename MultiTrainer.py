@@ -1,4 +1,4 @@
-import pygame
+import pygame, random
 from pygame.locals import *
 import os
 
@@ -48,26 +48,28 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
 
         
 
-        
-        # Collision
-        for platform in platforms:
-            if platform.rect.colliderect(self.char1.x + dx, self.char1.y, self.blockwidth, self.blockheight):
-                dx = 0
-            if platform.rect.colliderect(self.char1.x, self.char1.y + dy,self.blockwidth, self.blockheight):
-                if self.vel_y < 0:
-                    dy = platform.rect.bottom - self.char1.top
-                    self.vel_y = 0
-                elif self.vel_y >= 0:
-                    dy = platform.rect.top - self.char1.bottom
-                    self.vel_y = 0
-                    self.jumping = False
-                    self.jumped = False
-                    self.doublejump = True
+        # Need to change from platforms to abilities
+
+        # Collision 
+        # for platform in platforms:
+        #     if platform.rect.colliderect(self.char1.x + dx, self.char1.y, self.blockwidth, self.blockheight):
+        #         dx = 0
+        #     if platform.rect.colliderect(self.char1.x, self.char1.y + dy,self.blockwidth, self.blockheight):
+        #         if self.vel_y < 0:
+        #             dy = platform.rect.bottom - self.char1.top
+        #             self.vel_y = 0
+        #         elif self.vel_y >= 0:
+        #             dy = platform.rect.top - self.char1.bottom
+        #             self.vel_y = 0
+        #             self.jumping = False
+        #             self.jumped = False
+        #             self.doublejump = True
                     
 		#update player coordinates
-        self.x += dx
-        self.y += dy
+        # self.x += dx
+        # self.y += dy
 
+        # Window boundaries
         if self.char1.bottom > screenheight:
             self.char1.bottom = screenheight
             dy = 0
@@ -78,31 +80,14 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
             self.x = screenwidth-6
         
 
+        # Animations
         self.char1.center = (self.x,self.y+self.char1.height/2)
         if self.walkcount + 1 >= 30:
             self.walkcount = 0
         if self.idlecount + 1 >= 30:
             self.idlecount = 0
-        if self.jumpcountanim + 1 >= 9:
-            self.jumpcountanim = 0    
-        if self.fallcountanim + 1 >= 9:
-            self.fallcountanim = 0   
 
-        if self.jumping and self.idleright:
-            if dy <= 0:
-                screen.blit(self.jumpright[self.jumpcountanim//3],self.char1)
-                self.jumpcountanim += 1
-            elif dy > 0:
-                screen.blit(self.fallright[self.fallcountanim//3],self.char1)
-                self.fallcountanim += 1
-        elif self.jumping and self.idleleft:
-            if dy <= 0:
-                screen.blit(self.jumpleft[self.jumpcountanim//3],self.char1)
-                self.jumpcountanim += 1
-            elif dy > 0:
-                screen.blit(self.fallleft[self.fallcountanim//3],self.char1)
-                self.fallcountanim += 1
-        elif self.right:
+        if self.right:
             screen.blit(self.runright[self.walkcount//3],self.char1)
             self.walkcount += 1
         elif self.left:
@@ -119,18 +104,35 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
 
 
 
-class Flag(pygame.sprite.Sprite):
+class Target(pygame.sprite.Sprite):
     def __init__(self):
-        self.flagimg = pygame.image.load(os.path.join("Graphics",'flag.png'))
+        self.targetimg = pygame.image.load(os.path.join("Graphics",'target.png'))
 
-        self.flagx = 0
-        self.flagy = 0
-        self.flagsize = (30,60)
-        self.flagchar = self.flagimg.get_rect()
+        self.targetx = 0
+        self.targety = 0
+        self.targetsize = [30,60]
+        self.targetchar = self.targetimg.get_rect()
+        self.targetvalues = []
+        self.targets = [[] for i in range(4)]
 
-    def flagplace(self,screen):
-        self.flagchar.center = (self.flagx,self.flagy)
-        screen.blit(pygame.transform.scale(self.flagimg,self.flagsize),self.flagchar)
+    def targetplace(self,screen):
+        for x in range(0,4):
+            self.targetchar.center = (self.targets[x][0],self.targets[x][1])
+            screen.blit(pygame.transform.scale(self.targetimg,[self.targets[x][2],self.targets[x][3]]),self.targetchar)
+
+    def check_click(self, mouse):
+        for x in range(0,4):
+            self.targetchar.center = (self.targets[x][0],self.targets[x][1])
+            if self.targetchar.collidepoint(mouse):
+                self.targets.pop(x)
+                self.targetx = random.randint(70,screenwidth-70)
+                self.targety = random.randint(70,screenheight-70)
+                self.targetsize[0] = random.randint(40,130)
+                self.targetsize[1] = self.targetsize[0]
+                self.targetvalues = [self.targetx,self.targety,self.targetsize[0],self.targetsize[1]]
+                self.targets.append(self.targetvalues)
+
+
 
 
         
@@ -139,59 +141,48 @@ class Flag(pygame.sprite.Sprite):
 def main():
     gamedisplay = 0
     menuselector = 0
-    levelselector = 1
-    levelselectorbool = False
-    levelselmain = False
+
 
     pygame.display.set_caption('MultiTrainer') # Title
 
     # Fill background
     mainmenu = pygame.image.load(os.path.join("Graphics",'background.png'))
     bg = pygame.image.load(os.path.join("Graphics",'background.png'))
-    levelselgraphic = pygame.image.load(os.path.join("Graphics",'background.png'))
-    level1img = pygame.image.load(os.path.join("Graphics",'level1.png'))
+    fpsbg = pygame.image.load(os.path.join("Graphics",'fpsbackground.jpg'))
     bgsize = (screenwidth, screenheight)
     bg = pygame.transform.scale(bg,bgsize)
+    fpsbg = pygame.transform.scale(fpsbg,bgsize)
     mainmenu = pygame.transform.scale(mainmenu,bgsize)
-    levelselgraphic = pygame.transform.scale(levelselgraphic,bgsize)
+   
 
     # Displaying text
-    fonttitle = pygame.font.Font("VeniteAdoremus.ttf", 80)
-    font = pygame.font.Font("VeniteAdoremus.ttf", 45)
+    fonttitle = pygame.font.Font("VeniteAdoremus.ttf", 70)
+    font = pygame.font.Font("VeniteAdoremus.ttf", 35)
 
 
     title = fonttitle.render("MultiTrainer", 3, (64, 64, 64))
     titlepos = title.get_rect()
-    titlepos.center = (screenwidth//2 , screenheight//7)
+    titlepos.center = (screenwidth//2 , screenheight//2.6)
 
-    play = font.render("Play", 3, (0, 0, 0))
-    playpos = play.get_rect()
-    playpos.center = (screenwidth//2 , screenheight//1.6)
+    fps = font.render("FPS", 3, (0, 0, 0))
+    fpspos = fps.get_rect()
+    fpspos.center = (screenwidth//2 , screenheight//1.65)
 
-    levelsel = font.render("Select level", 3, (0, 0, 0))
-    levelselpos = levelsel.get_rect()
-    levelselpos.center = (screenwidth//2 , screenheight//1.3)
+    moba = font.render("MOBA", 3, (0, 0, 0))
+    mobapos = moba.get_rect()
+    mobapos.center = (screenwidth//2 , screenheight//1.45)
 
-    exit = font.render("Exit", 3, (0, 0, 0))
+    typing = font.render("TYPING", 3, (0, 0, 0))
+    typingpos = typing.get_rect()
+    typingpos.center = (screenwidth//2 , screenheight//1.3)
+
+    exit = font.render("EXIT", 3, (0, 0, 0))
     exitpos = exit.get_rect()
-    exitpos.center = (screenwidth//2 , screenheight//1.1)
+    exitpos.center = (screenwidth//2 , screenheight//1.18)
 
-    level1 = font.render("Level1", 3, (0, 0, 0))
-    level1pos = level1.get_rect()
-    level1pos.center = (200 , screenheight//5)
+    # testblock = Block()
 
-    mainmen = font.render("Main menu", 3, (0, 0, 0))
-    mainmenpos = mainmen.get_rect()
-    mainmenpos.center = (screenwidth//2 , 600)
-
-    mainmenu.blit(title, titlepos)
-    mainmenu.blit(play, playpos)
-    mainmenu.blit(levelsel, levelselpos)
-    mainmenu.blit(exit, exitpos)
-
-    testblock = Block()
-
-    flagblock = Flag()
+    targetblock = Target()
 
 
     
@@ -206,129 +197,95 @@ def main():
                     menuselector -= 1
                 elif event.key == pygame.K_s and gamedisplay == 0:
                     menuselector += 1
-                if event.key == pygame.K_d and levelselectorbool and levelselmain == False:
-                    levelselector += 1
-                elif event.key == pygame.K_a and levelselectorbool and levelselmain == False:
-                    levelselector -= 1
-                if event.key == pygame.K_w and levelselectorbool:
-                    levelselector = 1
-                    levelselmain = False
-                elif event.key == pygame.K_s and levelselectorbool:
-                    levelselmain = True
+
                 if event.key == pygame.K_ESCAPE and gamedisplay > 0:
                     gamedisplay = 0
-                    testblock.x = 10
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                targetblock.check_click(event.pos)
 
     
         if(gamedisplay == 0): # MAIN MENU HERE
             screen.blit(mainmenu, (0,0))
             if menuselector == 0:
-                play = font.render("Play", True, (255, 0, 0))
-                levelsel = font.render("Select level", True, (0, 0, 0))
+                fps = font.render("FPS", True, (255, 0, 0))
+                moba = font.render("MOBA", True, (0, 0, 0))
+                typing = font.render("TYPING", True, (0, 0, 0))
                 exit = font.render("Exit", True, (0, 0, 0))
-                mainmenu.blit(play, playpos)
-                mainmenu.blit(levelsel, levelselpos)
+                mainmenu.blit(fps, fpspos)
+                mainmenu.blit(moba, mobapos)
+                mainmenu.blit(typing, typingpos)
                 mainmenu.blit(exit, exitpos)
             else:
-                play = font.render("Play", True, (0, 0, 0))
-                mainmenu.blit(play, playpos)
+                fps = font.render("FPS", True, (0, 0, 0))
+                mainmenu.blit(fps, fpspos)
 
             if menuselector == 1:
-                play = font.render("Play", True, (0, 0, 0))
-                levelsel = font.render("Select level", True, (255, 0, 0))
+                fps = font.render("FPS", True, (0, 0, 0))
+                moba = font.render("MOBA", True, (255, 0, 0))
+                typing = font.render("TYPING", True, (0, 0, 0))
                 exit = font.render("Exit", True, (0, 0, 0))
+                mainmenu.blit(fps, fpspos)
+                mainmenu.blit(moba, mobapos)
+                mainmenu.blit(typing, typingpos)
                 mainmenu.blit(exit, exitpos)
-                mainmenu.blit(levelsel, levelselpos)
-                mainmenu.blit(play, playpos)
             else:
-                levelsel = font.render("Select level", True, (0, 0, 0))
-                mainmenu.blit(levelsel, levelselpos)
+                moba = font.render("MOBA", True, (0, 0, 0))
+                mainmenu.blit(moba, mobapos)
 
             if menuselector == 2:
-                play = font.render("Play", True, (0, 0, 0))
-                levelsel = font.render("Select level", True, (0, 0, 0))
+                fps = font.render("FPS", True, (0, 0, 0))
+                moba = font.render("MOBA", True, (0, 0, 0))
+                typing = font.render("TYPING", True, (255, 0, 0))
+                exit = font.render("Exit", True, (0, 0, 0))
+                mainmenu.blit(exit, exitpos)
+                mainmenu.blit(moba, mobapos)
+                mainmenu.blit(typing, typingpos)
+                mainmenu.blit(fps, fpspos)
+            else:
+                typing = font.render("TYPING", True, (0, 0, 0))
+                mainmenu.blit(typing, typingpos)
+    
+            if menuselector == 3:
+                fps = font.render("FPS", True, (0, 0, 0))
+                moba = font.render("MOBA", True, (0, 0, 0))
+                typing = font.render("TYPING", True, (0, 0, 0))
                 exit = font.render("Exit", True, (255, 0, 0))
                 mainmenu.blit(exit, exitpos)
-                mainmenu.blit(levelsel, levelselpos)
-                mainmenu.blit(play, playpos)
+                mainmenu.blit(moba, mobapos)
+                mainmenu.blit(typing, typingpos)
+                mainmenu.blit(fps, fpspos)
             else:
-                exit = font.render("Exit", True, (0, 0, 0))
+                exit = font.render("EXIT", True, (0, 0, 0))
                 mainmenu.blit(exit, exitpos)
                 
 
             if menuselector < 0:
-                menuselector = 2
-            elif menuselector > 2:
+                menuselector = 3
+            elif menuselector > 3:
                 menuselector = 0
 
+            # FPS game
             if(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 0):
                 gamedisplay = 1
-                
-                flagblock.flagx = screenwidth - flagblock.flagsize[0]
-                flagblock.flagy = 573 - flagblock.flagsize[1] / 1.4
-                
-                testblock.x = 10
-                testblock.y = screenheight- 59 - testblock.blockheight
-
-                platforms = Platform.Level1()
-            elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 1):
-                levelselectorbool = True
-                gamedisplay = -1
-                pygame.time.wait(100)
+                for x in range(0,4):
+                    targetblock.targetx = random.randint(70,screenwidth-70)
+                    targetblock.targety = random.randint(70,screenheight-70)
+                    targetblock.targetsize[0] = random.randint(40,130)
+                    targetblock.targetsize[1] = targetblock.targetsize[0]
+                    targetblock.targetvalues = [targetblock.targetx,targetblock.targety,targetblock.targetsize[0],targetblock.targetsize[1]]
+                    targetblock.targets[x] = (targetblock.targetvalues)
             
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 2):
                 return
 
-        elif(gamedisplay == -1):
-            screen.blit(levelselgraphic, (0, 0))
-            if levelselector == 1:
-                level1 = font.render("Level1", True, (255, 0, 0))
-                mainmen = font.render("Main menu", True, (0, 0, 0))
-                levelselgraphic.blit(level1, level1pos)
-                levelselgraphic.blit(mainmen, mainmenpos)
-            else:
-                level1 = font.render("Level1", True, (0, 0, 0))
-                levelselgraphic.blit(level1, level1pos)
 
-
-            if levelselmain:
-                level1 = font.render("Level1", True, (0, 0, 0))
-                mainmen = font.render("Main menu", True, (255, 0, 0))
-                levelselgraphic.blit(level1, level1pos)
-                levelselgraphic.blit(mainmen, mainmenpos)
-            else:
-                mainmen = font.render("Main menu", True, (0, 0, 0))
-                levelselgraphic.blit(mainmen, mainmenpos)
-
-            if levelselector < 1:
-                levelselector = 2
-            elif levelselector > 2:
-                levelselector = 1
-
-
-            if(pygame.key.get_pressed()[pygame.K_RETURN] and levelselmain):
-                gamedisplay = 0
-                pygame.time.wait(100)
-            elif(pygame.key.get_pressed()[pygame.K_RETURN] and levelselector == 1):
-                gamedisplay = 1
-                flagblock.flagx = screenwidth - flagblock.flagsize[0]
-                flagblock.flagy = 573 - flagblock.flagsize[1] / 1.4
-                testblock.x = 10
-                testblock.y = screenheight- 59 - testblock.blockheight
-                platforms = Platform.Level1()
-                levelselectorbool = False
-                pygame.time.wait(100)
            
 
-        elif(gamedisplay == 1): # FIRST LEVEL HERE
-            if(testblock.life == 1):
-                for platform in platforms:
-                    screen.blit(platform.image, platform.rect)
-                screen.blit(bg, (0, 0))
-                screen.blit(level1img, (0, 0))
-                flagblock.flagplace(screen)
+        elif(gamedisplay == 1): # FPS HERE
+                screen.blit(fpsbg, (0,0))
+                targetblock.targetplace(screen)
+                print(menuselector)
                 
-                testblock.update()
 
         pygame.display.flip()
 main()
