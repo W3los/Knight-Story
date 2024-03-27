@@ -2,8 +2,8 @@ import pygame, random
 from pygame.locals import *
 import os
 
-screenwidth = 1000
-screenheight = 700
+screenwidth = 1920
+screenheight = 1080
 pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
@@ -114,6 +114,9 @@ class Target(pygame.sprite.Sprite):
         self.targetchar = self.targetimg.get_rect()
         self.targetvalues = []
         self.targets = [[] for i in range(4)]
+        self.score = 0
+        self.chosenTime = 0
+        self.seconds = 10
 
     def targetplace(self,screen):
         for x in range(0,4):
@@ -121,16 +124,18 @@ class Target(pygame.sprite.Sprite):
             screen.blit(pygame.transform.scale(self.targetimg,[self.targets[x][2],self.targets[x][3]]),self.targetchar)
 
     def check_click(self, mouse):
-        for x in range(0,4):
-            self.targetchar.center = (self.targets[x][0],self.targets[x][1])
-            if self.targetchar.collidepoint(mouse):
-                self.targets.pop(x)
-                self.targetx = random.randint(70,screenwidth-70)
-                self.targety = random.randint(70,screenheight-70)
-                self.targetsize[0] = random.randint(40,130)
-                self.targetsize[1] = self.targetsize[0]
-                self.targetvalues = [self.targetx,self.targety,self.targetsize[0],self.targetsize[1]]
-                self.targets.append(self.targetvalues)
+        if(self.seconds > 0):
+            for x in range(0,4):
+                self.targetchar.center = (self.targets[x][0],self.targets[x][1])
+                if self.targetchar.collidepoint(mouse):
+                    self.targets.pop(x)
+                    self.targetx = random.randint(70,screenwidth-70)
+                    self.targety = random.randint(70,screenheight-70)
+                    self.targetsize[0] = random.randint(40,130)
+                    self.targetsize[1] = self.targetsize[0]
+                    self.targetvalues = [self.targetx,self.targety,self.targetsize[0],self.targetsize[1]]
+                    self.targets.append(self.targetvalues)
+                    self.score += 1
 
 
 
@@ -141,7 +146,7 @@ class Target(pygame.sprite.Sprite):
 def main():
     gamedisplay = 0
     menuselector = 0
-
+    fpsselector = 0
 
     pygame.display.set_caption('MultiTrainer') # Title
 
@@ -157,38 +162,54 @@ def main():
 
     # Displaying text
     fonttitle = pygame.font.Font("VeniteAdoremus.ttf", 70)
-    font = pygame.font.Font("VeniteAdoremus.ttf", 35)
+    font = pygame.font.Font("VeniteAdoremus.ttf", 45)
+    fontreturn = pygame.font.Font("VeniteAdoremus.ttf", 15)
 
 
     title = fonttitle.render("MultiTrainer", 3, (64, 64, 64))
     titlepos = title.get_rect()
     titlepos.center = (screenwidth//2 , screenheight//2.6)
 
-    fps = font.render("FPS", 3, (0, 0, 0))
+    fps = font.render("FPS", True, (0, 0, 0))
     fpspos = fps.get_rect()
-    fpspos.center = (screenwidth//2 , screenheight//1.65)
+    fpspos.center = (screenwidth//2 , screenheight//1.63)
 
-    moba = font.render("MOBA", 3, (0, 0, 0))
+    moba = font.render("MOBA", True, (0, 0, 0))
     mobapos = moba.get_rect()
-    mobapos.center = (screenwidth//2 , screenheight//1.45)
+    mobapos.center = (screenwidth//2 , screenheight//1.44)
 
-    typing = font.render("TYPING", 3, (0, 0, 0))
+    typing = font.render("TYPING", True, (0, 0, 0))
     typingpos = typing.get_rect()
-    typingpos.center = (screenwidth//2 , screenheight//1.3)
+    typingpos.center = (screenwidth//2 , screenheight//1.28)
 
-    exit = font.render("EXIT", 3, (0, 0, 0))
+    exit = font.render("EXIT", True, (0, 0, 0))
     exitpos = exit.get_rect()
-    exitpos.center = (screenwidth//2 , screenheight//1.18)
+    exitpos.center = (screenwidth//2 , screenheight//1.16)
+
+
+    ten = font.render("10 seconds", True, (0, 0, 0))
+    tenpos = ten.get_rect()
+    tenpos.center = (screenwidth//2 , screenheight//1.65)
+
+    thirty = font.render("30 seconds", True, (0, 0, 0))
+    thirtypos = thirty.get_rect()
+    thirtypos.center = (screenwidth//2 , screenheight//1.45)
+
+    sixty = font.render("60 seconds", True, (0, 0, 0))
+    sixtypos = sixty.get_rect()
+    sixtypos.center = (screenwidth//2 , screenheight//1.3)
 
     # testblock = Block()
 
     targetblock = Target()
 
+    
+
 
     
     # Event loop
     while True:
-        clock.tick(30)
+        clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
@@ -197,10 +218,15 @@ def main():
                     menuselector -= 1
                 elif event.key == pygame.K_s and gamedisplay == 0:
                     menuselector += 1
+                elif event.key == pygame.K_w and gamedisplay == 10:
+                    fpsselector -= 1
+                elif event.key == pygame.K_s and gamedisplay == 10:
+                    fpsselector += 1
 
                 if event.key == pygame.K_ESCAPE and gamedisplay > 0:
                     gamedisplay = 0
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+                    targetblock.score = 0
+            elif event.type == pygame.MOUSEBUTTONDOWN and gamedisplay == 1:
                 targetblock.check_click(event.pos)
 
     
@@ -266,7 +292,13 @@ def main():
 
             # FPS game
             if(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 0):
-                gamedisplay = 1
+                screen.blit(fpsbg,(0,0))
+                gamedisplay = 10
+                
+                if fpsselector < 0:
+                    fpsselector = 2
+                elif fpsselector > 2:
+                    fpsselector = 0
                 for x in range(0,4):
                     targetblock.targetx = random.randint(70,screenwidth-70)
                     targetblock.targety = random.randint(70,screenheight-70)
@@ -274,17 +306,75 @@ def main():
                     targetblock.targetsize[1] = targetblock.targetsize[0]
                     targetblock.targetvalues = [targetblock.targetx,targetblock.targety,targetblock.targetsize[0],targetblock.targetsize[1]]
                     targetblock.targets[x] = (targetblock.targetvalues)
-            
-            elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 2):
+                pygame.time.wait(100)
+            elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 3):
                 return
+
+
+        elif(gamedisplay == 10):
+            if(fpsselector == 0):
+                ten = font.render("10 seconds", True, (255, 0, 0))
+                thirty = font.render("30 seconds", True, (255,255, 255))
+                sixty = font.render("60 seconds", True, (255,255, 255))
+                screen.blit(ten, tenpos)
+                screen.blit(thirty, thirtypos)
+                screen.blit(sixty, sixtypos)
+            else:
+                ten = font.render("10 seconds", True, (255,255, 255))
+                screen.blit(ten, tenpos)
+
+            if(fpsselector == 1):
+                ten = font.render("10 seconds", True, (255,255, 255))
+                thirty = font.render("30 seconds", True, (255, 0, 0))
+                sixty = font.render("60 seconds", True, (255,255, 255))
+                screen.blit(ten, tenpos)
+                screen.blit(thirty, thirtypos)
+                screen.blit(sixty, sixtypos)
+            else:
+                thirty = font.render("30 seconds", True, (255,255, 255))
+                screen.blit(thirty, thirtypos)
+
+            if(fpsselector == 2):
+                ten = font.render("10 seconds", True, (255,255, 255))
+                thirty = font.render("30 seconds", True, (255,255, 255))
+                sixty = font.render("60 seconds", True, (255, 0, 0))
+                screen.blit(ten, tenpos)
+                screen.blit(thirty, thirtypos)
+                screen.blit(sixty, sixtypos)
+            else:
+                sixty = font.render("60 seconds", True, (255,255, 255))
+                screen.blit(sixty, sixtypos)
+            if(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 0):
+                targetblock.chosenTime = 10
+                start_timer = pygame.time.get_ticks()
+                gamedisplay = 1
+            elif(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 1):
+                targetblock.chosenTime = 30
+                start_timer = pygame.time.get_ticks()
+                gamedisplay = 1
+            elif(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 2):
+                targetblock.chosenTime = 60
+                start_timer = pygame.time.get_ticks()
+                gamedisplay = 1
+            
+            
 
 
            
 
         elif(gamedisplay == 1): # FPS HERE
                 screen.blit(fpsbg, (0,0))
+                textscore = font.render("Score: " + str(targetblock.score), True, (255, 255, 255))
+                targetblock.seconds = round(targetblock.chosenTime -((pygame.time.get_ticks()- start_timer)/1000), 3)
                 targetblock.targetplace(screen)
-                print(menuselector)
+                screen.blit(textscore, (10, 10))
+                screen.blit(font.render(str(targetblock.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
+                if(targetblock.seconds < 0):
+                    screen.blit(fpsbg, (0,0))
+                    screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, (255, 255, 255)), ((screenwidth//2) - 350, screenheight//16))
+                    screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
+
+                
                 
 
         pygame.display.flip()
