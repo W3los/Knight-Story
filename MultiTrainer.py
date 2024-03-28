@@ -1,9 +1,10 @@
+
 import pygame, random
 from pygame.locals import *
 import os
 
-screenwidth = 1920
-screenheight = 1080
+screenwidth = 1280
+screenheight = 720
 pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
@@ -295,10 +296,7 @@ def main():
                 screen.blit(fpsbg,(0,0))
                 gamedisplay = 10
                 
-                if fpsselector < 0:
-                    fpsselector = 2
-                elif fpsselector > 2:
-                    fpsselector = 0
+
                 for x in range(0,4):
                     targetblock.targetx = random.randint(70,screenwidth-70)
                     targetblock.targety = random.randint(70,screenheight-70)
@@ -356,6 +354,10 @@ def main():
                 targetblock.chosenTime = 60
                 start_timer = pygame.time.get_ticks()
                 gamedisplay = 1
+            if fpsselector < 0:
+                fpsselector = 2
+            elif fpsselector > 2:
+                fpsselector = 0
             
             
 
@@ -371,7 +373,7 @@ def main():
                 screen.blit(font.render(str(targetblock.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
                 if(targetblock.seconds < 0):
                     screen.blit(fpsbg, (0,0))
-                    screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, (255, 255, 255)), ((screenwidth//2) - 350, screenheight//16))
+                    screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, (255, 255, 255)), ((screenwidth//2) - 400, screenheight//16))
                     screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
 
                 
