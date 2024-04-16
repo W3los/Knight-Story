@@ -1,10 +1,9 @@
-
 import pygame, random
 from pygame.locals import *
 import os
 
-screenwidth = 1280
-screenheight = 720
+screenwidth = 1920
+screenheight = 1080
 pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
@@ -108,6 +107,7 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
 class Target(pygame.sprite.Sprite):
     def __init__(self):
         self.targetimg = pygame.image.load(os.path.join("Graphics",'target.png'))
+        self.crosshairimg = pygame.image.load(os.path.join("Graphics",'crosshair.png'))
 
         self.targetx = 0
         self.targety = 0
@@ -118,6 +118,12 @@ class Target(pygame.sprite.Sprite):
         self.score = 0
         self.chosenTime = 0
         self.seconds = 10
+        self.highscores = open(os.path.join("Highscores","Highscores.txt"))
+        self.content = self.highscores.readlines()
+        self.highscore10 = int(self.content[0])
+        self.highscore30 = int(self.content[1])
+        self.highscore60 = int(self.content[2])
+        self.highscores.close()
 
     def targetplace(self,screen):
         for x in range(0,4):
@@ -296,7 +302,10 @@ def main():
                 screen.blit(fpsbg,(0,0))
                 gamedisplay = 10
                 
-
+                if fpsselector < 0:
+                    fpsselector = 2
+                elif fpsselector > 2:
+                    fpsselector = 0
                 for x in range(0,4):
                     targetblock.targetx = random.randint(70,screenwidth-70)
                     targetblock.targety = random.randint(70,screenheight-70)
@@ -345,19 +354,21 @@ def main():
             if(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 0):
                 targetblock.chosenTime = 10
                 start_timer = pygame.time.get_ticks()
+                pygame.mouse.set_visible(False)
+                cursor_img_rect = targetblock.crosshairimg.get_rect()
                 gamedisplay = 1
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 1):
                 targetblock.chosenTime = 30
                 start_timer = pygame.time.get_ticks()
+                pygame.mouse.set_visible(False)
+                cursor_img_rect = targetblock.crosshairimg.get_rect()
                 gamedisplay = 1
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 2):
                 targetblock.chosenTime = 60
                 start_timer = pygame.time.get_ticks()
+                pygame.mouse.set_visible(False)
+                cursor_img_rect = targetblock.crosshairimg.get_rect()
                 gamedisplay = 1
-            if fpsselector < 0:
-                fpsselector = 2
-            elif fpsselector > 2:
-                fpsselector = 0
             
             
 
@@ -366,14 +377,34 @@ def main():
 
         elif(gamedisplay == 1): # FPS HERE
                 screen.blit(fpsbg, (0,0))
+                cursor_img_rect.center = pygame.mouse.get_pos()
                 textscore = font.render("Score: " + str(targetblock.score), True, (255, 255, 255))
                 targetblock.seconds = round(targetblock.chosenTime -((pygame.time.get_ticks()- start_timer)/1000), 3)
                 targetblock.targetplace(screen)
                 screen.blit(textscore, (10, 10))
                 screen.blit(font.render(str(targetblock.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
+                screen.blit(targetblock.crosshairimg, cursor_img_rect)
                 if(targetblock.seconds < 0):
                     screen.blit(fpsbg, (0,0))
+                    if(targetblock.chosenTime == 10 and targetblock.highscore10 < targetblock.score):
+                        targetblock.highscore10 = targetblock.score
+                        targetblock.highscores = open(os.path.join("Highscores","Highscores.txt"),"w")
+                        targetblock.highscores.writelines([str(targetblock.score) + "\n", str(targetblock.highscore30) + "\n", str(targetblock.highscore60) + "\n"])
+                        targetblock.highscores.close()
+                    if(targetblock.chosenTime == 30 and targetblock.highscore30 < targetblock.score):
+                        targetblock.highscore30 = targetblock.score
+                        targetblock.highscores = open(os.path.join("Highscores","Highscores.txt"),"w")
+                        targetblock.highscores.writelines([str(targetblock.highscore10) + "\n", str(targetblock.score) + "\n", str(targetblock.highscore60) + "\n"])
+                        targetblock.highscores.close()
+                    if(targetblock.chosenTime == 60 and targetblock.highscore60 < targetblock.score):
+                        targetblock.highscore60 = targetblock.score
+                        targetblock.highscores = open(os.path.join("Highscores","Highscores.txt"),"w")
+                        targetblock.highscores.writelines([str(targetblock.highscore10) + "\n", str(targetblock.highscore30) + "\n", str(targetblock.score) + "\n"])
+                        targetblock.highscores.close()
                     screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, (255, 255, 255)), ((screenwidth//2) - 400, screenheight//16))
+                    screen.blit(font.render("Highscore on 10 seconds: " + str(targetblock.highscore10), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//2.5))
+                    screen.blit(font.render("Highscore on 30 seconds: " + str(targetblock.highscore30), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//2.2))
+                    screen.blit(font.render("Highscore on 60 seconds: " + str(targetblock.highscore60), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//1.9))
                     screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
 
                 
