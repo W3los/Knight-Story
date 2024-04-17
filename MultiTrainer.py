@@ -1,7 +1,7 @@
 import pygame, random
 from pygame.locals import *
 import os
-from pygame.math import Vector2
+import math
 
 screenwidth = 1920
 screenheight = 1080
@@ -19,9 +19,6 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
         # self.runright = [pygame.image.load(os.path.join("Graphics",'run1.png')), pygame.image.load(os.path.join("Graphics",'run2.png')), pygame.image.load(os.path.join("Graphics",'run3.png')), pygame.image.load(os.path.join("Graphics",'run4.png')), pygame.image.load(os.path.join("Graphics",'run5.png')), pygame.image.load(os.path.join("Graphics",'run6.png')), pygame.image.load(os.path.join("Graphics",'run7.png')), pygame.image.load(os.path.join("Graphics",'run8.png')), pygame.image.load(os.path.join("Graphics",'run9.png')),pygame.image.load(os.path.join("Graphics",'run10.png'))]
         # self.runleft = [pygame.image.load(os.path.join("Graphics",'left1.png')), pygame.image.load(os.path.join("Graphics",'left2.png')), pygame.image.load(os.path.join("Graphics",'left3.png')), pygame.image.load(os.path.join("Graphics",'left4.png')), pygame.image.load(os.path.join("Graphics",'left5.png')), pygame.image.load(os.path.join("Graphics",'left6.png')), pygame.image.load(os.path.join("Graphics",'left7.png')), pygame.image.load(os.path.join("Graphics",'left8.png')), pygame.image.load(os.path.join("Graphics",'left9.png')),pygame.image.load(os.path.join("Graphics",'left10.png'))]
         # self.idleleftanim = [pygame.image.load(os.path.join("Graphics",'idleleft1.png')), pygame.image.load(os.path.join("Graphics",'idleleft2.png')), pygame.image.load(os.path.join("Graphics",'idleleft3.png')), pygame.image.load(os.path.join("Graphics",'idleleft4.png')), pygame.image.load(os.path.join("Graphics",'idleleft5.png')), pygame.image.load(os.path.join("Graphics",'idleleft6.png')), pygame.image.load(os.path.join("Graphics",'idleleft7.png')), pygame.image.load(os.path.join("Graphics",'idleleft8.png')), pygame.image.load(os.path.join("Graphics",'idleleft9.png')),pygame.image.load(os.path.join("Graphics",'idleleft10.png'))]
-
-        self.blockwidth = 100
-        self.blockheight = 120
 
         self.image = pygame.Surface((70, 150))
         self.image.fill(pygame.Color('blue'))
@@ -97,6 +94,44 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
         self.mouse_pos = pygame.mouse.get_pos()
 
 
+class Projectiles(pygame.sprite.Sprite):
+    def __init__(self, direction, speed):
+        super().__init__()
+        if direction in ["down", "up"]:
+            self.image = pygame.Surface((20, 40)) 
+        elif direction in ["left", "right"]:
+            self.image = pygame.Surface((40, 20))  
+
+        self.image.fill(pygame.Color('yellow'))
+        self.rect = self.image.get_rect()
+        if direction == "down":
+            self.rect.x = random.randint(10, screenwidth-10)
+            self.rect.y = 0
+            self.speed_x = 0
+            self.speed_y = speed
+        elif direction == "up":
+            self.rect.x = random.randint(10, screenwidth-10)
+            self.rect.y = screenheight
+            self.speed_x = 0
+            self.speed_y = -speed
+        elif direction == "left":
+            self.rect.x = screenwidth
+            self.rect.y = random.randint(10, screenheight-10)
+            self.speed_x = -speed
+            self.speed_y = 0
+        elif direction == "right":
+            self.rect.x = 0
+            self.rect.y = random.randint(10, screenheight-10)
+            self.speed_x = speed
+            self.speed_y = 0
+
+    def update(self):
+        self.rect.y += self.speed_y 
+        self.rect.x += self.speed_x 
+
+        # Kill sprie when left window
+        if self.rect.top > screenheight or self.rect.bottom < 0 or self.rect.right < 0 or self.rect.left > screenwidth:
+            self.kill()
 
 class Target(pygame.sprite.Sprite):
     def __init__(self):
@@ -205,9 +240,11 @@ def main():
 
     player = Player()
 
+
+    projectile_timer = 0
     
 
-
+    projectiles_group = pygame.sprite.Group()
     
     # Event loop
     while True:
@@ -379,7 +416,7 @@ def main():
 
            
 
-        elif(gamedisplay == 1): # FPS HERE
+        elif(gamedisplay == 1): # FPS
                 screen.blit(fpsbg, (0,0))
                 cursor_img_rect.center = pygame.mouse.get_pos()
                 textscore = font.render("Score: " + str(targetblock.score), True, (255, 255, 255))
@@ -411,16 +448,38 @@ def main():
                     screen.blit(font.render("Highscore on 60 seconds: " + str(targetblock.highscore60), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//1.9))
                     screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
 
-        elif(gamedisplay == 2):
-            screen.blit(fpsbg,(0,0))
-            screen.blit(player.image,player.rect)
+        elif(gamedisplay == 2): # MOBA
+
             run = (player.mouse_pos[0] - player.x) * 0.04 # Scale
             rise = (player.mouse_pos[1] - player.y) * 0.04
 
             player.x += run
             player.y += rise
             player.rect.center = player.x, player.y
+            
+            projectile_timer += 1
+            collisions = pygame.sprite.spritecollide(player, projectiles_group, False)
+            if (collisions):
+                gamedisplay = 0
+                player.x = screenwidth//2
+                player.y = screenheight//2
+                player.mouse_pos = (screenwidth//2, screenheight//2)
 
+                for sprite in projectiles_group:
+                    sprite.kill()
+
+            if (projectile_timer) >= 25: 
+                direction = random.choice(["down", "up", "left", "right"])
+                speed = random.randint(7, 10)
+                projectile = Projectiles(direction, speed)
+                projectiles_group.add(projectile)
+                projectile_timer = 0  
+
+            projectiles_group.update()
+            screen.blit(fpsbg,(0,0))
+            screen.blit(player.image,player.rect)
+
+            projectiles_group.draw(screen)
                 
 
         pygame.display.flip()
