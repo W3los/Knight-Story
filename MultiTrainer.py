@@ -1,6 +1,7 @@
 import pygame, random
 from pygame.locals import *
 import os
+from pygame.math import Vector2
 
 screenwidth = 1920
 screenheight = 1080
@@ -14,35 +15,36 @@ clock = pygame.time.Clock()
 class Player(pygame.sprite.Sprite):  # Character for MOBA game
     def __init__(self):
 
-        self.idle = [pygame.image.load(os.path.join("Graphics",'idle1.png')), pygame.image.load(os.path.join("Graphics",'idle2.png')), pygame.image.load(os.path.join("Graphics",'idle3.png')), pygame.image.load(os.path.join("Graphics",'idle4.png')), pygame.image.load(os.path.join("Graphics",'idle5.png')), pygame.image.load(os.path.join("Graphics",'idle6.png')), pygame.image.load(os.path.join("Graphics",'idle7.png')), pygame.image.load(os.path.join("Graphics",'idle8.png')), pygame.image.load(os.path.join("Graphics",'idle9.png')),pygame.image.load(os.path.join("Graphics",'idle10.png'))]
-        self.runright = [pygame.image.load(os.path.join("Graphics",'run1.png')), pygame.image.load(os.path.join("Graphics",'run2.png')), pygame.image.load(os.path.join("Graphics",'run3.png')), pygame.image.load(os.path.join("Graphics",'run4.png')), pygame.image.load(os.path.join("Graphics",'run5.png')), pygame.image.load(os.path.join("Graphics",'run6.png')), pygame.image.load(os.path.join("Graphics",'run7.png')), pygame.image.load(os.path.join("Graphics",'run8.png')), pygame.image.load(os.path.join("Graphics",'run9.png')),pygame.image.load(os.path.join("Graphics",'run10.png'))]
-        self.runleft = [pygame.image.load(os.path.join("Graphics",'left1.png')), pygame.image.load(os.path.join("Graphics",'left2.png')), pygame.image.load(os.path.join("Graphics",'left3.png')), pygame.image.load(os.path.join("Graphics",'left4.png')), pygame.image.load(os.path.join("Graphics",'left5.png')), pygame.image.load(os.path.join("Graphics",'left6.png')), pygame.image.load(os.path.join("Graphics",'left7.png')), pygame.image.load(os.path.join("Graphics",'left8.png')), pygame.image.load(os.path.join("Graphics",'left9.png')),pygame.image.load(os.path.join("Graphics",'left10.png'))]
-        self.idleleftanim = [pygame.image.load(os.path.join("Graphics",'idleleft1.png')), pygame.image.load(os.path.join("Graphics",'idleleft2.png')), pygame.image.load(os.path.join("Graphics",'idleleft3.png')), pygame.image.load(os.path.join("Graphics",'idleleft4.png')), pygame.image.load(os.path.join("Graphics",'idleleft5.png')), pygame.image.load(os.path.join("Graphics",'idleleft6.png')), pygame.image.load(os.path.join("Graphics",'idleleft7.png')), pygame.image.load(os.path.join("Graphics",'idleleft8.png')), pygame.image.load(os.path.join("Graphics",'idleleft9.png')),pygame.image.load(os.path.join("Graphics",'idleleft10.png'))]
+        # self.idle = [pygame.image.load(os.path.join("Graphics",'idle1.png')), pygame.image.load(os.path.join("Graphics",'idle2.png')), pygame.image.load(os.path.join("Graphics",'idle3.png')), pygame.image.load(os.path.join("Graphics",'idle4.png')), pygame.image.load(os.path.join("Graphics",'idle5.png')), pygame.image.load(os.path.join("Graphics",'idle6.png')), pygame.image.load(os.path.join("Graphics",'idle7.png')), pygame.image.load(os.path.join("Graphics",'idle8.png')), pygame.image.load(os.path.join("Graphics",'idle9.png')),pygame.image.load(os.path.join("Graphics",'idle10.png'))]
+        # self.runright = [pygame.image.load(os.path.join("Graphics",'run1.png')), pygame.image.load(os.path.join("Graphics",'run2.png')), pygame.image.load(os.path.join("Graphics",'run3.png')), pygame.image.load(os.path.join("Graphics",'run4.png')), pygame.image.load(os.path.join("Graphics",'run5.png')), pygame.image.load(os.path.join("Graphics",'run6.png')), pygame.image.load(os.path.join("Graphics",'run7.png')), pygame.image.load(os.path.join("Graphics",'run8.png')), pygame.image.load(os.path.join("Graphics",'run9.png')),pygame.image.load(os.path.join("Graphics",'run10.png'))]
+        # self.runleft = [pygame.image.load(os.path.join("Graphics",'left1.png')), pygame.image.load(os.path.join("Graphics",'left2.png')), pygame.image.load(os.path.join("Graphics",'left3.png')), pygame.image.load(os.path.join("Graphics",'left4.png')), pygame.image.load(os.path.join("Graphics",'left5.png')), pygame.image.load(os.path.join("Graphics",'left6.png')), pygame.image.load(os.path.join("Graphics",'left7.png')), pygame.image.load(os.path.join("Graphics",'left8.png')), pygame.image.load(os.path.join("Graphics",'left9.png')),pygame.image.load(os.path.join("Graphics",'left10.png'))]
+        # self.idleleftanim = [pygame.image.load(os.path.join("Graphics",'idleleft1.png')), pygame.image.load(os.path.join("Graphics",'idleleft2.png')), pygame.image.load(os.path.join("Graphics",'idleleft3.png')), pygame.image.load(os.path.join("Graphics",'idleleft4.png')), pygame.image.load(os.path.join("Graphics",'idleleft5.png')), pygame.image.load(os.path.join("Graphics",'idleleft6.png')), pygame.image.load(os.path.join("Graphics",'idleleft7.png')), pygame.image.load(os.path.join("Graphics",'idleleft8.png')), pygame.image.load(os.path.join("Graphics",'idleleft9.png')),pygame.image.load(os.path.join("Graphics",'idleleft10.png'))]
 
-        self.blockwidth = 29
-        self.blockheight = 38
+        self.blockwidth = 100
+        self.blockheight = 120
 
+        self.image = pygame.Surface((70, 150))
+        self.image.fill(pygame.Color('blue'))
+        self.x,self.y = screenwidth//2, screenheight//2
+        self.rect = self.image.get_rect(center=(self.x, self.y))
 
-        self.x = 10
-        self.y = 0
-
-
-        self.vel_y = 8
-
-        self.left = False
-        self.right = False 
-        self.walkcount = 0
-        self.idlecount = 0
-        self.idleright = True
-        self.idleleft = False
+        # self.left = False
+        # self.right = False 
+        # self.walkcount = 0
+        # self.idlecount = 0
+        # self.idleright = True
+        # self.idleleft = False
 
         self.life = 1
+        self.mouse_pos = (screenwidth//2, screenheight//2)
 
-        self.char1 = self.idle[0].get_rect()
-        self.char1.x = self.x
-        self.char1.y = self.y
+        # self.char1 = self.idle[0].get_rect()
+        # self.char1.x = self.x
+        # self.char1.y = self.y
 
-        self.gamedisplay = 1
+
+        
+        
 
 
 
@@ -68,39 +70,31 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
 		#update player coordinates
         # self.x += dx
         # self.y += dy
-
-        # Window boundaries
-        if self.char1.bottom > screenheight:
-            self.char1.bottom = screenheight
-            dy = 0
-            self.life = 0
-        elif self.x <= 0:
-            self.x = 6
-        elif self.x >= screenwidth:
-            self.x = screenwidth-6
         
 
         # Animations
-        self.char1.center = (self.x,self.y+self.char1.height/2)
-        if self.walkcount + 1 >= 30:
-            self.walkcount = 0
-        if self.idlecount + 1 >= 30:
-            self.idlecount = 0
+        # self.char1.center = (self.x,self.y+self.char1.height/2)
+        # if self.walkcount + 1 >= 30:
+        #     self.walkcount = 0
+        # if self.idlecount + 1 >= 30:
+        #     self.idlecount = 0
 
-        if self.right:
-            screen.blit(self.runright[self.walkcount//3],self.char1)
-            self.walkcount += 1
-        elif self.left:
-            screen.blit(self.runleft[self.walkcount//3],self.char1)
-            self.walkcount += 1
-        elif not self.right and self.idleright:
-            screen.blit(self.idle[self.idlecount//3],self.char1)  
-            self.idlecount += 1
-            self.walkcount = 0
-        elif not self.left and self.idleleft:
-            screen.blit(self.idleleftanim[self.idlecount//3],self.char1)  
-            self.idlecount += 1
-            self.walkcount = 0
+        # if self.right:
+        #     screen.blit(self.runright[self.walkcount//3],self.char1)
+        #     self.walkcount += 1
+        # elif self.left:
+        #     screen.blit(self.runleft[self.walkcount//3],self.char1)
+        #     self.walkcount += 1
+        # elif not self.right and self.idleright:
+        #     screen.blit(self.idle[self.idlecount//3],self.char1)  
+        #     self.idlecount += 1
+        #     self.walkcount = 0
+        # elif not self.left and self.idleleft:
+        #     screen.blit(self.idleleftanim[self.idlecount//3],self.char1)  
+        #     self.idlecount += 1
+        #     self.walkcount = 0
+    def update(self):
+        self.mouse_pos = pygame.mouse.get_pos()
 
 
 
@@ -206,9 +200,10 @@ def main():
     sixtypos = sixty.get_rect()
     sixtypos.center = (screenwidth//2 , screenheight//1.3)
 
-    # testblock = Block()
 
     targetblock = Target()
+
+    player = Player()
 
     
 
@@ -235,6 +230,9 @@ def main():
                     targetblock.score = 0
             elif event.type == pygame.MOUSEBUTTONDOWN and gamedisplay == 1:
                 targetblock.check_click(event.pos)
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                player.update()
+
 
     
         if(gamedisplay == 0): # MAIN MENU HERE
@@ -297,7 +295,7 @@ def main():
             elif menuselector > 3:
                 menuselector = 0
 
-            # FPS game
+            # FPS
             if(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 0):
                 screen.blit(fpsbg,(0,0))
                 gamedisplay = 10
@@ -314,6 +312,12 @@ def main():
                     targetblock.targetvalues = [targetblock.targetx,targetblock.targety,targetblock.targetsize[0],targetblock.targetsize[1]]
                     targetblock.targets[x] = (targetblock.targetvalues)
                 pygame.time.wait(100)
+
+            # MOBA
+            elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 1):
+                gamedisplay = 2
+
+            # EXIT
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 3):
                 return
 
@@ -407,7 +411,16 @@ def main():
                     screen.blit(font.render("Highscore on 60 seconds: " + str(targetblock.highscore60), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//1.9))
                     screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
 
-                
+        elif(gamedisplay == 2):
+            screen.blit(fpsbg,(0,0))
+            screen.blit(player.image,player.rect)
+            run = (player.mouse_pos[0] - player.x) * 0.04 # Scale
+            rise = (player.mouse_pos[1] - player.y) * 0.04
+
+            player.x += run
+            player.y += rise
+            player.rect.center = player.x, player.y
+
                 
 
         pygame.display.flip()
