@@ -9,101 +9,141 @@ pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
 
+
     
 
 
 class Player(pygame.sprite.Sprite):  # Character for MOBA game
     def __init__(self):
 
-        # self.idle = [pygame.image.load(os.path.join("Graphics",'idle1.png')), pygame.image.load(os.path.join("Graphics",'idle2.png')), pygame.image.load(os.path.join("Graphics",'idle3.png')), pygame.image.load(os.path.join("Graphics",'idle4.png')), pygame.image.load(os.path.join("Graphics",'idle5.png')), pygame.image.load(os.path.join("Graphics",'idle6.png')), pygame.image.load(os.path.join("Graphics",'idle7.png')), pygame.image.load(os.path.join("Graphics",'idle8.png')), pygame.image.load(os.path.join("Graphics",'idle9.png')),pygame.image.load(os.path.join("Graphics",'idle10.png'))]
-        # self.runright = [pygame.image.load(os.path.join("Graphics",'run1.png')), pygame.image.load(os.path.join("Graphics",'run2.png')), pygame.image.load(os.path.join("Graphics",'run3.png')), pygame.image.load(os.path.join("Graphics",'run4.png')), pygame.image.load(os.path.join("Graphics",'run5.png')), pygame.image.load(os.path.join("Graphics",'run6.png')), pygame.image.load(os.path.join("Graphics",'run7.png')), pygame.image.load(os.path.join("Graphics",'run8.png')), pygame.image.load(os.path.join("Graphics",'run9.png')),pygame.image.load(os.path.join("Graphics",'run10.png'))]
-        # self.runleft = [pygame.image.load(os.path.join("Graphics",'left1.png')), pygame.image.load(os.path.join("Graphics",'left2.png')), pygame.image.load(os.path.join("Graphics",'left3.png')), pygame.image.load(os.path.join("Graphics",'left4.png')), pygame.image.load(os.path.join("Graphics",'left5.png')), pygame.image.load(os.path.join("Graphics",'left6.png')), pygame.image.load(os.path.join("Graphics",'left7.png')), pygame.image.load(os.path.join("Graphics",'left8.png')), pygame.image.load(os.path.join("Graphics",'left9.png')),pygame.image.load(os.path.join("Graphics",'left10.png'))]
-        # self.idleleftanim = [pygame.image.load(os.path.join("Graphics",'idleleft1.png')), pygame.image.load(os.path.join("Graphics",'idleleft2.png')), pygame.image.load(os.path.join("Graphics",'idleleft3.png')), pygame.image.load(os.path.join("Graphics",'idleleft4.png')), pygame.image.load(os.path.join("Graphics",'idleleft5.png')), pygame.image.load(os.path.join("Graphics",'idleleft6.png')), pygame.image.load(os.path.join("Graphics",'idleleft7.png')), pygame.image.load(os.path.join("Graphics",'idleleft8.png')), pygame.image.load(os.path.join("Graphics",'idleleft9.png')),pygame.image.load(os.path.join("Graphics",'idleleft10.png'))]
-
-        self.image = pygame.Surface((70, 150))
-        self.image.fill(pygame.Color('blue'))
+        
+        self.idle = [pygame.image.load(os.path.join("Graphics", f'idle{i}.png')) for i in range(1, 11)]
+        self.runright = [pygame.image.load(os.path.join("Graphics", f'run{i}.png')) for i in range(1, 11)]
+        self.runleft = [pygame.image.load(os.path.join("Graphics", f'left{i}.png')) for i in range(1, 11)]
+        self.idleleftanim = [pygame.image.load(os.path.join("Graphics", f'idleleft{i}.png')) for i in range(1, 11)]
+        
         self.x,self.y = screenwidth//2, screenheight//2
-        self.rect = self.image.get_rect(center=(self.x, self.y))
 
-        # self.left = False
-        # self.right = False 
-        # self.walkcount = 0
-        # self.idlecount = 0
-        # self.idleright = True
-        # self.idleleft = False
+        
+        self.playerwidth = 45
+        self.playerheight = 75
+
+        self.left = False
+        self.right = False 
+        self.walkcount = 0
+        self.idlecount = 0
+        self.idleright = True
+        self.idleleft = False
 
         self.life = 1
         self.mouse_pos = (screenwidth//2, screenheight//2)
 
-        # self.char1 = self.idle[0].get_rect()
-        # self.char1.x = self.x
-        # self.char1.y = self.y
+        self.image = self.idle[0]
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+        self.destination = None
+
+        self.dx = 0
+        self.resize_player_images()
+
+    def resize_player_images(self):
+        # Zmiana rozmiaru obrazków postaci na nowe wymiary
+        self.idle = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.idle]
+        self.runright = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.runright]
+        self.runleft = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.runleft]
+        self.idleleftanim = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.idleleftanim]
+
+    def animate(self, moving):
+        if self.walkcount + 1 >= 30:
+            self.walkcount = 0
+        if self.idlecount + 1 >= 30:
+            self.idlecount = 0
+
+        if moving:
+            if self.right:
+                self.image = self.runright[self.walkcount // 3]
+                self.walkcount += 1
+            elif self.left:
+                self.image = self.runleft[self.walkcount // 3]
+                self.walkcount += 1
+        else:
+            if self.idleright:
+                self.image = self.idle[self.idlecount // 3]
+                self.idlecount += 1
+            elif self.idleleft:
+                self.image = self.idleleftanim[self.idlecount // 3]
+                self.idlecount += 1
+            self.walkcount = 0
+    def move_towards_mouse(self):
+        if self.destination:
+            self.dx, dy = self.destination[0] - self.rect.centerx, self.destination[1] - self.rect.centery
+            dist = (self.dx**2 + dy**2) ** 0.5
+            if dist != 0:
+                speed = 10  # Prędkość ruchu bohatera
+                self.dx, dy = self.dx / dist, dy / dist
+                if dist <= speed:  # Jeśli odległość do celu jest mniejsza lub równa prędkości, zatrzymaj bohatera
+                    self.x, self.y = self.destination[0], self.destination[1]
+                    self.rect.center = (self.x, self.y)
+                    self.dx, dy = 0, 0  # Ustaw prędkości na 0
+                else:
+                    self.x += self.dx * speed
+                    self.y += dy * speed
+                    self.rect.center = (self.x, self.y)
 
 
-        
-        
-
-
-
-        
-
-        # Need to change from platforms to abilities
-
-        # Collision 
-        # for platform in platforms:
-        #     if platform.rect.colliderect(self.char1.x + dx, self.char1.y, self.blockwidth, self.blockheight):
-        #         dx = 0
-        #     if platform.rect.colliderect(self.char1.x, self.char1.y + dy,self.blockwidth, self.blockheight):
-        #         if self.vel_y < 0:
-        #             dy = platform.rect.bottom - self.char1.top
-        #             self.vel_y = 0
-        #         elif self.vel_y >= 0:
-        #             dy = platform.rect.top - self.char1.bottom
-        #             self.vel_y = 0
-        #             self.jumping = False
-        #             self.jumped = False
-        #             self.doublejump = True
-                    
-		#update player coordinates
-        # self.x += dx
-        # self.y += dy
-        
-
-        # Animations
-        # self.char1.center = (self.x,self.y+self.char1.height/2)
-        # if self.walkcount + 1 >= 30:
-        #     self.walkcount = 0
-        # if self.idlecount + 1 >= 30:
-        #     self.idlecount = 0
-
-        # if self.right:
-        #     screen.blit(self.runright[self.walkcount//3],self.char1)
-        #     self.walkcount += 1
-        # elif self.left:
-        #     screen.blit(self.runleft[self.walkcount//3],self.char1)
-        #     self.walkcount += 1
-        # elif not self.right and self.idleright:
-        #     screen.blit(self.idle[self.idlecount//3],self.char1)  
-        #     self.idlecount += 1
-        #     self.walkcount = 0
-        # elif not self.left and self.idleleft:
-        #     screen.blit(self.idleleftanim[self.idlecount//3],self.char1)  
-        #     self.idlecount += 1
-        #     self.walkcount = 0
     def update(self):
         self.mouse_pos = pygame.mouse.get_pos()
+        moving=False
+
+        if pygame.mouse.get_pressed()[2]:
+            self.destination = self.mouse_pos  # Ustawiamy nową lokalizację docelową na aktualną pozycję myszy
+            moving = True
+        elif self.destination is not None:  # Jeśli ustawiona jest lokalizacja docelowa
+            moving = True
+            self.move_towards_mouse() 
+        if self.mouse_pos[0] == self.rect.centerx and self.mouse_pos[1] == self.rect.centery:
+            moving = False
+        if self.dx > 0:
+            self.right = True
+            self.left = False
+            self.idleright = True
+            self.idleleft = False
+            moving = True
+        elif self.dx < 0:
+            self.right = False
+            self.left = True
+            self.idleright = False
+            self.idleleft = True
+            moving = True
+        elif self.dx == 0:
+            self.left = False
+            self.right = False
+            moving = False
+
+        
+        self.animate(moving)
 
 
 class Projectiles(pygame.sprite.Sprite):
     def __init__(self, direction, speed):
         super().__init__()
-        if direction in ["down", "up"]:
-            self.image = pygame.Surface((20, 40)) 
-        elif direction in ["left", "right"]:
-            self.image = pygame.Surface((40, 20))  
-
-        self.image.fill(pygame.Color('yellow'))
-        self.rect = self.image.get_rect()
+        if direction in ["down"]:
+            project_image = pygame.image.load(os.path.join("Graphics","project_down.png")).convert_alpha()
+            self.image = pygame.transform.scale(project_image, (20, 40))
+            self.rect = self.image.get_rect()
+        elif direction in ["up"]:
+            project_image = pygame.image.load(os.path.join("Graphics","project_up.png")).convert_alpha()
+            self.image = pygame.transform.scale(project_image, (20, 40))
+            self.rect = self.image.get_rect()
+        elif direction in ["left"]:
+            project_image = pygame.image.load(os.path.join("Graphics","project_left.png")).convert_alpha()
+            self.image = pygame.transform.scale(project_image, (40, 20))
+            self.rect = self.image.get_rect()
+        elif direction in ["right"]:
+            project_image = pygame.image.load(os.path.join("Graphics","project_right.png")).convert_alpha()
+            self.image = pygame.transform.scale(project_image, (40, 20))
+            self.rect = self.image.get_rect()
+    
         if direction == "down":
             self.rect.x = random.randint(10, screenwidth-10)
             self.rect.y = 0
@@ -131,6 +171,45 @@ class Projectiles(pygame.sprite.Sprite):
 
         # Kill sprie when left window
         if self.rect.top > screenheight or self.rect.bottom < 0 or self.rect.right < 0 or self.rect.left > screenwidth:
+            self.kill()
+
+class ChasingProjectile(pygame.sprite.Sprite):
+    def __init__(self, player):
+        super().__init__()
+        original_image = pygame.image.load(os.path.join("Graphics","eye.png")).convert_alpha()
+        self.image = pygame.transform.scale(original_image, (50, 50))
+        self.rect = self.image.get_rect()
+
+        # Ustawienie pozycji początkowej poza ekranem
+        self.rect.x = -self.rect.width
+        self.rect.y = random.randint(0, screenheight - self.rect.height)
+
+        self.player = player
+        self.creation_time = pygame.time.get_ticks()
+
+    def update(self):
+        # Obliczenie wektora kierunku do gracza
+        dx = self.player.rect.centerx - self.rect.centerx
+        dy = self.player.rect.centery - self.rect.centery
+
+        # Normalizacja wektora
+        distance = math.hypot(dx, dy)
+        if distance != 0:
+            dx /= distance
+            dy /= distance
+
+        # Ustawienie prędkości
+        speed = 5
+        self.rect.x += dx * speed
+        self.rect.y += dy * speed
+
+        # Sprawdzenie kolizji z graczem
+        if pygame.sprite.collide_rect(self, self.player):
+            # Przeniesienie gracza na środek ekranu
+            self.player.rect.center = screenwidth // 2, screenheight // 2
+
+        # Sprawdzenie czasu życia projektu
+        if pygame.time.get_ticks() - self.creation_time > 10000:
             self.kill()
 
 class Target(pygame.sprite.Sprite):
@@ -183,6 +262,10 @@ def main():
     gamedisplay = 0
     menuselector = 0
     fpsselector = 0
+
+    chasing_projectile_timer = 0
+    chasing_projectile_group = pygame.sprite.Group()
+    max_chasing_projectiles = 2
 
     pygame.display.set_caption('MultiTrainer') # Title
 
@@ -248,7 +331,7 @@ def main():
     
     # Event loop
     while True:
-        clock.tick(60)
+        clock.tick(30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
@@ -268,7 +351,7 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN and gamedisplay == 1:
                 targetblock.check_click(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-                player.update()
+                player.move_towards_mouse()
 
 
     
@@ -450,15 +533,22 @@ def main():
 
         elif(gamedisplay == 2): # MOBA
 
-            run = (player.mouse_pos[0] - player.x) * 0.04 # Scale
-            rise = (player.mouse_pos[1] - player.y) * 0.04
+            # run = (player.mouse_pos[0] - player.x) * 0.04 # Scale
+            # rise = (player.mouse_pos[1] - player.y) * 0.04
 
-            player.x += run
-            player.y += rise
+            # player.x += run
+            # player.y += rise
             player.rect.center = player.x, player.y
+            chasing_projectile_timer += 1
+            if chasing_projectile_timer >= 150 and len(chasing_projectile_group) < max_chasing_projectiles:  # Tworzenie co 5 sekund
+                chasing_projectile = ChasingProjectile(player)
+                chasing_projectile_group.add(chasing_projectile)
+                chasing_projectile_timer = 0
             
             projectile_timer += 1
-            collisions = pygame.sprite.spritecollide(player, projectiles_group, False)
+            collisions = pygame.sprite.spritecollide(player, projectiles_group, False) or pygame.sprite.spritecollide(player, chasing_projectile_group, False)
+            player.update()
+
             if (collisions):
                 gamedisplay = 0
                 player.x = screenwidth//2
@@ -467,6 +557,8 @@ def main():
 
                 for sprite in projectiles_group:
                     sprite.kill()
+                for sprites in chasing_projectile_group:
+                    sprites.kill()
 
             if (projectile_timer) >= 25: 
                 direction = random.choice(["down", "up", "left", "right"])
@@ -475,11 +567,13 @@ def main():
                 projectiles_group.add(projectile)
                 projectile_timer = 0  
 
+            chasing_projectile_group.update()  
             projectiles_group.update()
             screen.blit(fpsbg,(0,0))
             screen.blit(player.image,player.rect)
 
             projectiles_group.draw(screen)
+            chasing_projectile_group.draw(screen)
                 
 
         pygame.display.flip()
