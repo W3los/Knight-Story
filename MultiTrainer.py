@@ -34,20 +34,27 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
         self.idlecount = 0
         self.idleright = True
         self.idleleft = False
+        self.resize_player_images()
 
         self.life = 1
         self.mouse_pos = (screenwidth//2, screenheight//2)
 
         self.image = self.idle[0]
         self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
+        self.rect.center = (self.playerwidth//2, self.playerheight//2)
         self.destination = None
+        self.seconds = 0
+        self.highscores = open(os.path.join("Highscores","HighscoreMOBA.txt"))
+        self.content2 = self.highscores.readline()
+        self.highscoreMOBA = float(self.content2)
+        self.highscores.close()
+        self.score = 0
+        
 
         self.dx = 0
-        self.resize_player_images()
+        
 
     def resize_player_images(self):
-        # Zmiana rozmiaru obrazków postaci na nowe wymiary
         self.idle = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.idle]
         self.runright = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.runright]
         self.runleft = [pygame.transform.scale(image, (self.playerwidth, self.playerheight)) for image in self.runleft]
@@ -79,12 +86,12 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
             self.dx, dy = self.destination[0] - self.rect.centerx, self.destination[1] - self.rect.centery
             dist = (self.dx**2 + dy**2) ** 0.5
             if dist != 0:
-                speed = 10  # Prędkość ruchu bohatera
+                speed = 10 
                 self.dx, dy = self.dx / dist, dy / dist
-                if dist <= speed:  # Jeśli odległość do celu jest mniejsza lub równa prędkości, zatrzymaj bohatera
+                if dist < speed:  
                     self.x, self.y = self.destination[0], self.destination[1]
                     self.rect.center = (self.x, self.y)
-                    self.dx, dy = 0, 0  # Ustaw prędkości na 0
+                    self.dx, dy = 0, 0  
                 else:
                     self.x += self.dx * speed
                     self.y += dy * speed
@@ -96,9 +103,9 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
         moving=False
 
         if pygame.mouse.get_pressed()[2]:
-            self.destination = self.mouse_pos  # Ustawiamy nową lokalizację docelową na aktualną pozycję myszy
+            self.destination = self.mouse_pos  
             moving = True
-        elif self.destination is not None:  # Jeśli ustawiona jest lokalizacja docelowa
+        elif self.destination is not None:  
             moving = True
             self.move_towards_mouse() 
         if self.mouse_pos[0] == self.rect.centerx and self.mouse_pos[1] == self.rect.centery:
@@ -119,6 +126,7 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
             self.left = False
             self.right = False
             moving = False
+        
 
         
         self.animate(moving)
@@ -262,6 +270,7 @@ def main():
     gamedisplay = 0
     menuselector = 0
     fpsselector = 0
+    collision = False
 
     chasing_projectile_timer = 0
     chasing_projectile_group = pygame.sprite.Group()
@@ -436,6 +445,7 @@ def main():
             # MOBA
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 1):
                 gamedisplay = 2
+                start_timer_moba = pygame.time.get_ticks()
 
             # EXIT
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 3):
@@ -532,13 +542,9 @@ def main():
                     screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
 
         elif(gamedisplay == 2): # MOBA
-
-            # run = (player.mouse_pos[0] - player.x) * 0.04 # Scale
-            # rise = (player.mouse_pos[1] - player.y) * 0.04
-
-            # player.x += run
-            # player.y += rise
+            player.seconds = round(0 +((pygame.time.get_ticks()- start_timer_moba)/1000), 3)
             player.rect.center = player.x, player.y
+        
             chasing_projectile_timer += 1
             if chasing_projectile_timer >= 150 and len(chasing_projectile_group) < max_chasing_projectiles:  # Tworzenie co 5 sekund
                 chasing_projectile = ChasingProjectile(player)
@@ -548,17 +554,6 @@ def main():
             projectile_timer += 1
             collisions = pygame.sprite.spritecollide(player, projectiles_group, False) or pygame.sprite.spritecollide(player, chasing_projectile_group, False)
             player.update()
-
-            if (collisions):
-                gamedisplay = 0
-                player.x = screenwidth//2
-                player.y = screenheight//2
-                player.mouse_pos = (screenwidth//2, screenheight//2)
-
-                for sprite in projectiles_group:
-                    sprite.kill()
-                for sprites in chasing_projectile_group:
-                    sprites.kill()
 
             if (projectile_timer) >= 25: 
                 direction = random.choice(["down", "up", "left", "right"])
@@ -570,10 +565,34 @@ def main():
             chasing_projectile_group.update()  
             projectiles_group.update()
             screen.blit(fpsbg,(0,0))
+            screen.blit(font.render(str(player.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
             screen.blit(player.image,player.rect)
 
             projectiles_group.draw(screen)
             chasing_projectile_group.draw(screen)
+            if (collisions):
+                collision = True
+                player.score = player.seconds
+            if(collision):
+                screen.blit(fpsbg, (0,0))
+                if(player.score > player.highscoreMOBA):
+                    player.highscoreMOBA = player.score
+                    player.highscores = open(os.path.join("Highscores","HighscoreMOBA.txt"),"w")
+                    player.highscores.writelines([str(player.highscoreMOBA)])
+                    player.highscores.close()
+                player.x = screenwidth//2
+                player.y = screenheight//2
+                player.mouse_pos = (screenwidth//2, screenheight//2)
+                screen.blit(font.render("Your score is " + str(player.score) , True, (255, 255, 255)), ((screenwidth//2) - 270, screenheight//16))
+                screen.blit(font.render("Highscore: " + str(player.highscoreMOBA), True, (0, 255, 255)), ((screenwidth//2) - 250, screenheight//2.6))
+                screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
+                player.seconds = 0
+
+                for sprite in projectiles_group:
+                    sprite.kill()
+                for sprites in chasing_projectile_group:
+                    sprites.kill()
+
                 
 
         pygame.display.flip()
