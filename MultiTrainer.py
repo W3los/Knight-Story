@@ -2,6 +2,7 @@ import pygame, random
 from pygame.locals import *
 import os
 import math
+import time
 
 screenwidth = 1920
 screenheight = 1080
@@ -11,6 +12,10 @@ clock = pygame.time.Clock()
 
 
     
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+BLACK = (0, 0, 0)
 
 
 class Player(pygame.sprite.Sprite):  # Character for MOBA game
@@ -65,6 +70,7 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
             self.walkcount = 0
         if self.idlecount + 1 >= 30:
             self.idlecount = 0
+        print(moving)
 
         if moving:
             if self.right:
@@ -100,36 +106,36 @@ class Player(pygame.sprite.Sprite):  # Character for MOBA game
 
     def update(self):
         self.mouse_pos = pygame.mouse.get_pos()
-        moving=False
+        self.moving=False
 
         if pygame.mouse.get_pressed()[2]:
             self.destination = self.mouse_pos  
-            moving = True
+            self.moving = True
         elif self.destination is not None:  
-            moving = True
+            self.moving = True
             self.move_towards_mouse() 
         if self.mouse_pos[0] == self.rect.centerx and self.mouse_pos[1] == self.rect.centery:
-            moving = False
+            self.moving = False
         if self.dx > 0:
             self.right = True
             self.left = False
             self.idleright = True
             self.idleleft = False
-            moving = True
+            self.moving = True
         elif self.dx < 0:
             self.right = False
             self.left = True
             self.idleright = False
             self.idleleft = True
-            moving = True
+            self.moving = True
         elif self.dx == 0:
             self.left = False
             self.right = False
-            moving = False
+            self.moving = False
         
 
         
-        self.animate(moving)
+        self.animate(self.moving)
 
 
 class Projectiles(pygame.sprite.Sprite):
@@ -260,6 +266,19 @@ class Target(pygame.sprite.Sprite):
                     self.targets.append(self.targetvalues)
                     self.score += 1
 
+fonttype = pygame.font.SysFont('Arial', 40)
+
+def generate_sentence():
+    with open("Sentences.txt", "r", encoding="utf-8") as file:
+        sentences = file.readlines()
+    return random.choice(sentences).strip()
+
+# Funkcja rysująca tekst na ekranie
+def draw_text(surface, text, fonttype, color, x, y):
+    text_surface = fonttype.render(text, True, color)
+    text_rect = text_surface.get_rect()
+    text_rect.midtop = (x, y)
+    surface.blit(text_surface, text_rect)
 
 
 
@@ -276,15 +295,23 @@ def main():
     chasing_projectile_group = pygame.sprite.Group()
     max_chasing_projectiles = 2
 
+    input_text = ""
+    start_timer_typing = None
+    win = False
+
     pygame.display.set_caption('MultiTrainer') # Title
 
     # Fill background
     mainmenu = pygame.image.load(os.path.join("Graphics",'background.png'))
     bg = pygame.image.load(os.path.join("Graphics",'background.png'))
     fpsbg = pygame.image.load(os.path.join("Graphics",'fpsbackground.jpg'))
+    mobabg = pygame.image.load(os.path.join("Graphics",'mobabg.png'))
+    typerbg = pygame.image.load(os.path.join("Graphics",'typerbg.png'))
     bgsize = (screenwidth, screenheight)
     bg = pygame.transform.scale(bg,bgsize)
     fpsbg = pygame.transform.scale(fpsbg,bgsize)
+    mobabg = pygame.transform.scale(mobabg,bgsize)
+    typerbg = pygame.transform.scale(typerbg,bgsize)
     mainmenu = pygame.transform.scale(mainmenu,bgsize)
    
 
@@ -298,32 +325,32 @@ def main():
     titlepos = title.get_rect()
     titlepos.center = (screenwidth//2 , screenheight//2.6)
 
-    fps = font.render("FPS", True, (0, 0, 0))
+    fps = font.render("FPS", True, BLACK)
     fpspos = fps.get_rect()
     fpspos.center = (screenwidth//2 , screenheight//1.63)
 
-    moba = font.render("MOBA", True, (0, 0, 0))
+    moba = font.render("MOBA", True, BLACK)
     mobapos = moba.get_rect()
     mobapos.center = (screenwidth//2 , screenheight//1.44)
 
-    typing = font.render("TYPING", True, (0, 0, 0))
+    typing = font.render("TYPING", True, BLACK)
     typingpos = typing.get_rect()
     typingpos.center = (screenwidth//2 , screenheight//1.28)
 
-    exit = font.render("EXIT", True, (0, 0, 0))
+    exit = font.render("EXIT", True, BLACK)
     exitpos = exit.get_rect()
     exitpos.center = (screenwidth//2 , screenheight//1.16)
 
 
-    ten = font.render("10 seconds", True, (0, 0, 0))
+    ten = font.render("10 seconds", True, BLACK)
     tenpos = ten.get_rect()
     tenpos.center = (screenwidth//2 , screenheight//1.65)
 
-    thirty = font.render("30 seconds", True, (0, 0, 0))
+    thirty = font.render("30 seconds", True, BLACK)
     thirtypos = thirty.get_rect()
     thirtypos.center = (screenwidth//2 , screenheight//1.45)
 
-    sixty = font.render("60 seconds", True, (0, 0, 0))
+    sixty = font.render("60 seconds", True, BLACK)
     sixtypos = sixty.get_rect()
     sixtypos.center = (screenwidth//2 , screenheight//1.3)
 
@@ -353,6 +380,11 @@ def main():
                     fpsselector -= 1
                 elif event.key == pygame.K_s and gamedisplay == 10:
                     fpsselector += 1
+                elif event.key == pygame.K_BACKSPACE and gamedisplay == 3:
+                    input_text = input_text[:-1]
+                elif gamedisplay == 3:
+                    input_text += event.unicode
+
 
                 if event.key == pygame.K_ESCAPE and gamedisplay > 0:
                     gamedisplay = 0
@@ -362,60 +394,62 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 player.move_towards_mouse()
 
-
     
         if(gamedisplay == 0): # MAIN MENU HERE
             screen.blit(mainmenu, (0,0))
+            win = False
+            collision = False
+            pygame.mouse.set_visible(True)
             if menuselector == 0:
-                fps = font.render("FPS", True, (255, 0, 0))
-                moba = font.render("MOBA", True, (0, 0, 0))
-                typing = font.render("TYPING", True, (0, 0, 0))
-                exit = font.render("Exit", True, (0, 0, 0))
+                fps = font.render("FPS", True, RED)
+                moba = font.render("MOBA", True, BLACK)
+                typing = font.render("TYPING", True, BLACK)
+                exit = font.render("Exit", True, BLACK)
                 mainmenu.blit(fps, fpspos)
                 mainmenu.blit(moba, mobapos)
                 mainmenu.blit(typing, typingpos)
                 mainmenu.blit(exit, exitpos)
             else:
-                fps = font.render("FPS", True, (0, 0, 0))
+                fps = font.render("FPS", True, BLACK)
                 mainmenu.blit(fps, fpspos)
 
             if menuselector == 1:
-                fps = font.render("FPS", True, (0, 0, 0))
-                moba = font.render("MOBA", True, (255, 0, 0))
-                typing = font.render("TYPING", True, (0, 0, 0))
-                exit = font.render("Exit", True, (0, 0, 0))
+                fps = font.render("FPS", True, BLACK)
+                moba = font.render("MOBA", True, RED)
+                typing = font.render("TYPING", True, BLACK)
+                exit = font.render("Exit", True, BLACK)
                 mainmenu.blit(fps, fpspos)
                 mainmenu.blit(moba, mobapos)
                 mainmenu.blit(typing, typingpos)
                 mainmenu.blit(exit, exitpos)
             else:
-                moba = font.render("MOBA", True, (0, 0, 0))
+                moba = font.render("MOBA", True, BLACK)
                 mainmenu.blit(moba, mobapos)
 
             if menuselector == 2:
-                fps = font.render("FPS", True, (0, 0, 0))
-                moba = font.render("MOBA", True, (0, 0, 0))
-                typing = font.render("TYPING", True, (255, 0, 0))
-                exit = font.render("Exit", True, (0, 0, 0))
+                fps = font.render("FPS", True, BLACK)
+                moba = font.render("MOBA", True, BLACK)
+                typing = font.render("TYPING", True, RED)
+                exit = font.render("Exit", True, BLACK)
                 mainmenu.blit(exit, exitpos)
                 mainmenu.blit(moba, mobapos)
                 mainmenu.blit(typing, typingpos)
                 mainmenu.blit(fps, fpspos)
             else:
-                typing = font.render("TYPING", True, (0, 0, 0))
+                typing = font.render("TYPING", True, BLACK)
                 mainmenu.blit(typing, typingpos)
     
             if menuselector == 3:
-                fps = font.render("FPS", True, (0, 0, 0))
-                moba = font.render("MOBA", True, (0, 0, 0))
-                typing = font.render("TYPING", True, (0, 0, 0))
-                exit = font.render("Exit", True, (255, 0, 0))
+                fps = font.render("FPS", True, BLACK)
+                moba = font.render("MOBA", True, BLACK)
+                typing = font.render("TYPING", True, BLACK)
+                exit = font.render("Exit", True, RED)
                 mainmenu.blit(exit, exitpos)
                 mainmenu.blit(moba, mobapos)
                 mainmenu.blit(typing, typingpos)
                 mainmenu.blit(fps, fpspos)
             else:
-                exit = font.render("EXIT", True, (0, 0, 0))
+                exit = font.render("EXIT", True, BLACK)
                 mainmenu.blit(exit, exitpos)
                 
 
@@ -447,6 +481,12 @@ def main():
                 gamedisplay = 2
                 start_timer_moba = pygame.time.get_ticks()
 
+            elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 2):
+                gamedisplay = 3
+                input_text = ''
+                start_timer_typing = time.time()
+                sentence = generate_sentence()
+
             # EXIT
             elif(pygame.key.get_pressed()[pygame.K_RETURN] and menuselector == 3):
                 return
@@ -454,36 +494,36 @@ def main():
 
         elif(gamedisplay == 10):
             if(fpsselector == 0):
-                ten = font.render("10 seconds", True, (255, 0, 0))
-                thirty = font.render("30 seconds", True, (255,255, 255))
-                sixty = font.render("60 seconds", True, (255,255, 255))
+                ten = font.render("10 seconds", True, RED)
+                thirty = font.render("30 seconds", True, BLACK)
+                sixty = font.render("60 seconds", True, BLACK)
                 screen.blit(ten, tenpos)
                 screen.blit(thirty, thirtypos)
                 screen.blit(sixty, sixtypos)
             else:
-                ten = font.render("10 seconds", True, (255,255, 255))
+                ten = font.render("10 seconds", True, BLACK)
                 screen.blit(ten, tenpos)
 
             if(fpsselector == 1):
-                ten = font.render("10 seconds", True, (255,255, 255))
-                thirty = font.render("30 seconds", True, (255, 0, 0))
-                sixty = font.render("60 seconds", True, (255,255, 255))
+                ten = font.render("10 seconds", True, BLACK)
+                thirty = font.render("30 seconds", True, RED)
+                sixty = font.render("60 seconds", True, BLACK)
                 screen.blit(ten, tenpos)
                 screen.blit(thirty, thirtypos)
                 screen.blit(sixty, sixtypos)
             else:
-                thirty = font.render("30 seconds", True, (255,255, 255))
+                thirty = font.render("30 seconds", True, BLACK)
                 screen.blit(thirty, thirtypos)
 
             if(fpsselector == 2):
-                ten = font.render("10 seconds", True, (255,255, 255))
-                thirty = font.render("30 seconds", True, (255,255, 255))
-                sixty = font.render("60 seconds", True, (255, 0, 0))
+                ten = font.render("10 seconds", True, BLACK)
+                thirty = font.render("30 seconds", True, BLACK)
+                sixty = font.render("60 seconds", True, RED)
                 screen.blit(ten, tenpos)
                 screen.blit(thirty, thirtypos)
                 screen.blit(sixty, sixtypos)
             else:
-                sixty = font.render("60 seconds", True, (255,255, 255))
+                sixty = font.render("60 seconds", True, BLACK)
                 screen.blit(sixty, sixtypos)
             if(pygame.key.get_pressed()[pygame.K_RETURN] and fpsselector == 0):
                 targetblock.chosenTime = 10
@@ -512,14 +552,14 @@ def main():
         elif(gamedisplay == 1): # FPS
                 screen.blit(fpsbg, (0,0))
                 cursor_img_rect.center = pygame.mouse.get_pos()
-                textscore = font.render("Score: " + str(targetblock.score), True, (255, 255, 255))
+                textscore = font.render("Score: " + str(targetblock.score), True, BLACK)
                 targetblock.seconds = round(targetblock.chosenTime -((pygame.time.get_ticks()- start_timer)/1000), 3)
                 targetblock.targetplace(screen)
                 screen.blit(textscore, (10, 10))
-                screen.blit(font.render(str(targetblock.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
+                screen.blit(font.render(str(targetblock.seconds), True, BLACK), ((screenwidth//2) - 60, screenheight//16))
                 screen.blit(targetblock.crosshairimg, cursor_img_rect)
                 if(targetblock.seconds < 0):
-                    screen.blit(fpsbg, (0,0))
+                    screen.fill(BLACK)
                     if(targetblock.chosenTime == 10 and targetblock.highscore10 < targetblock.score):
                         targetblock.highscore10 = targetblock.score
                         targetblock.highscores = open(os.path.join("Highscores","Highscores.txt"),"w")
@@ -535,18 +575,18 @@ def main():
                         targetblock.highscores = open(os.path.join("Highscores","Highscores.txt"),"w")
                         targetblock.highscores.writelines([str(targetblock.highscore10) + "\n", str(targetblock.highscore30) + "\n", str(targetblock.score) + "\n"])
                         targetblock.highscores.close()
-                    screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, (255, 255, 255)), ((screenwidth//2) - 400, screenheight//16))
+                    screen.blit(font.render("Your score on " + str(targetblock.chosenTime) + " seconds is " + str(targetblock.score), True, WHITE), ((screenwidth//2) - 400, screenheight//16))
                     screen.blit(font.render("Highscore on 10 seconds: " + str(targetblock.highscore10), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//2.5))
                     screen.blit(font.render("Highscore on 30 seconds: " + str(targetblock.highscore30), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//2.2))
                     screen.blit(font.render("Highscore on 60 seconds: " + str(targetblock.highscore60), True, (0, 255, 255)), ((screenwidth//2) - 365, screenheight//1.9))
-                    screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
+                    screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, WHITE), ((screenwidth//2) - 175, screenheight//1.2))
 
         elif(gamedisplay == 2): # MOBA
             player.seconds = round(0 +((pygame.time.get_ticks()- start_timer_moba)/1000), 3)
             player.rect.center = player.x, player.y
         
             chasing_projectile_timer += 1
-            if chasing_projectile_timer >= 150 and len(chasing_projectile_group) < max_chasing_projectiles:  # Tworzenie co 5 sekund
+            if chasing_projectile_timer >= 150 and len(chasing_projectile_group) < max_chasing_projectiles: 
                 chasing_projectile = ChasingProjectile(player)
                 chasing_projectile_group.add(chasing_projectile)
                 chasing_projectile_timer = 0
@@ -564,8 +604,8 @@ def main():
 
             chasing_projectile_group.update()  
             projectiles_group.update()
-            screen.blit(fpsbg,(0,0))
-            screen.blit(font.render(str(player.seconds), True, (255, 255, 255)), ((screenwidth//2) - 60, screenheight//16))
+            screen.blit(mobabg,(0,0))
+            screen.blit(font.render(str(player.seconds), True, BLACK), ((screenwidth//2) - 60, screenheight//16))
             screen.blit(player.image,player.rect)
 
             projectiles_group.draw(screen)
@@ -573,8 +613,10 @@ def main():
             if (collisions):
                 collision = True
                 player.score = player.seconds
+                player.destination = None
+                player.dx = 0
             if(collision):
-                screen.blit(fpsbg, (0,0))
+                screen.fill(BLACK)
                 if(player.score > player.highscoreMOBA):
                     player.highscoreMOBA = player.score
                     player.highscores = open(os.path.join("Highscores","HighscoreMOBA.txt"),"w")
@@ -583,9 +625,9 @@ def main():
                 player.x = screenwidth//2
                 player.y = screenheight//2
                 player.mouse_pos = (screenwidth//2, screenheight//2)
-                screen.blit(font.render("Your score is " + str(player.score) , True, (255, 255, 255)), ((screenwidth//2) - 270, screenheight//16))
+                screen.blit(font.render("Your score is " + str(player.score) , True, WHITE), ((screenwidth//2) - 270, screenheight//16))
                 screen.blit(font.render("Highscore: " + str(player.highscoreMOBA), True, (0, 255, 255)), ((screenwidth//2) - 250, screenheight//2.6))
-                screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, (255, 255, 255)), ((screenwidth//2) - 175, screenheight//1.2))
+                screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, WHITE), ((screenwidth//2) - 175, screenheight//1.2))
                 player.seconds = 0
 
                 for sprite in projectiles_group:
@@ -593,7 +635,38 @@ def main():
                 for sprites in chasing_projectile_group:
                     sprites.kill()
 
+        elif gamedisplay == 3:
+            screen.blit(typerbg, (0,0))
+            draw_text(screen, "Your sentence is:", fonttype, BLACK, screenwidth / 2, 50)
+
+
+            draw_text(screen, sentence, fonttype, BLACK, screenwidth / 2, 150)
+
+            min_length = min(len(input_text), len(sentence))
+            for i in range(min_length):
+                if input_text[i] == sentence[i]:
+                    draw_text(screen, input_text[i], fonttype, GREEN, screenwidth/4 + (i * 21), screenheight/2)
+                else:
+                    draw_text(screen, input_text[i], fonttype, RED, screenwidth/4 + (i * 21), screenheight/2)
+
+            if input_text == sentence:
+                win = True
+                end_time = time.time()
+                total_time = round(end_time - start_timer_typing, 2)
+                input_text = ''
+            if win:
+                screen.fill(BLACK)
+                words = sentence.split()
+                num_words = len(words)
+                wpm = round(num_words / (total_time / 60),1)
+
+                screen.blit(font.render("You typed it in " + str(total_time) + " seconds!" , True, (0, 255, 255)), ((screenwidth//2) - 400, screenheight//16))
+                screen.blit(font.render("That is " + str(wpm) + " words per minute!" , True, (0, 255, 255)), ((screenwidth//2) - 400, screenheight//2.6))
+                screen.blit(fontreturn.render("Press Escape to return to Main Menu", True, WHITE), ((screenwidth//2) - 175, screenheight//1.2))
                 
+
+
+                        
 
         pygame.display.flip()
 main()
